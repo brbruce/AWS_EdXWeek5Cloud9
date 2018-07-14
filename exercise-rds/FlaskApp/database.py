@@ -34,6 +34,8 @@ def add_photo(object_key, labels):
 
 def get_database_connection():
     "Build a database connection"
+    # Debugging password error.
+    print("********Password: "+config.DATABASE_PASSWORD)
     conn = mysql.connector.connect(user=config.DATABASE_USER, password=config.DATABASE_PASSWORD,
                                    host=config.DATABASE_HOST,
                                    database=config.DATABASE_DB_NAME,

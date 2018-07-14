@@ -28,7 +28,7 @@
                     "env": {
                         "DATABASE_DB_NAME": "Photos",
                         "DATABASE_HOST": "edx-photos-db.ccd69a3vcffc.us-west-2.rds.amazonaws.com",
-                        "DATABASE_PASSWORD": "1W4&IK%oDoKQpKGQ",
+                        "DATABASE_PASSWORD": "ShowMeTheMoney",
                         "DATABASE_USER": "web_user",
                         "FLASK_SECRET": "asdfwe2342s",
                         "PHOTOS_BUCKET": "bbruceedxbucket"
