@@ -2,6 +2,9 @@
     "build": {
         "@saveall": true
     },
+    "instance": {
+        "@automaticShutdown": "30"
+    },
     "language": {
         "tern_defs": {
             "json()": {
@@ -23,9 +26,14 @@
             "@inited": "true",
             "json()": {
                 "Python3RunConfig": {
-                    "command": "exercise-rds/FlaskApp/application.py",
+                    "command": "exercise-cognito/FlaskApp/application.py",
                     "debug": false,
                     "env": {
+                        "BASE_URL": "http://localhost:5000",
+                        "COGNITO_CLIENT_ID": "7l7q0a6u04e5ffjs1sqm6fjeoh",
+                        "COGNITO_CLIENT_SECRET": "19cs5t5ba5di21qs8usffv16qnincmf9rdciptf1c9iqq4rvvli4",
+                        "COGNITO_DOMAIN": "brbruce-ex9.auth.us-west-2.amazoncognito.com",
+                        "COGNITO_POOL_ID": "us-west-2_f7H1OM1ys",
                         "DATABASE_DB_NAME": "Photos",
                         "DATABASE_HOST": "edx-photos-db.ccd69a3vcffc.us-west-2.rds.amazonaws.com",
                         "DATABASE_PASSWORD": "ShowMeTheMoney",
