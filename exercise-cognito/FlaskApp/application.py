@@ -10,7 +10,7 @@
 # specific language governing permissions and limitations under the License.
 "Demo Flask application"
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -25,6 +25,7 @@ from jose import jwt
 import config
 import util
 import database
+import pprint
 
 application = Flask(__name__)
 application.secret_key = config.FLASK_SECRET
@@ -53,13 +54,33 @@ class User(flask_login.UserMixin):
 @login_manager.user_loader
 def user_loader(session_token):
     """Populate user object, check expiry"""
+    
+    # BBRUCE - Debugging
+    #print ("user_loader: Checking session..."+session_token)
+    #print ("user_loader: session:")
+    #pprint.pprint(session)
+
     if "expires" not in session:
         return None
 
     expires = datetime.utcfromtimestamp(session['expires'])
+    # BBRUCE - Debugging
+    # expires will be 3600 seconds after login.  To test expiration, change it to only 1 minute after login by subtracting 59 mins.
+    #expires_orig = expires
+    #expires = expires_orig - timedelta(minutes=59)
     expires_seconds = (expires - datetime.utcnow()).total_seconds()
+    
+    #print("Expires_orig: "+str(expires_orig))
+    #print("Expires: "+str(expires))
+    #print("Expires_seconds: "+str(expires_seconds))
+    
     if expires_seconds < 0:
-        return None
+        # BBRUCE - Advanced challenge.  Refresh tokens on session expiration
+        #return None
+        if 'refresh_token' not in session:
+            return None
+        else:
+            return refresh_token_and_get_user()
 
     user = User()
     user.id = session_token
@@ -265,6 +286,10 @@ def callback():
         verify(response.json()["access_token"])
         id_token = verify(response.json()["id_token"], response.json()["access_token"])
 
+        # BBRUCE Debugging
+        #print("callback(): response.json:")
+        #pprint.pprint(response.json())
+
         user = User()
         user.id = id_token["cognito:username"]
         session['nickname'] = id_token["nickname"]
@@ -296,6 +321,55 @@ def verify(token, access_token=None):
     key = [k for k in JWKS if k["kid"] == header['kid']][0]
     id_token = jwt.decode(token, key, audience=config.COGNITO_CLIENT_ID, access_token=access_token)
     return id_token
+
+
+# BRBRUCE - Ex 9 advanced challenge 2
+# Called from user_loader() on session expiration.  Return user object or None.
+# Copied and modified from callback() method above.
+def refresh_token_and_get_user():
+    """On session expiry, exchange the refresh token in the session for a new id_token and access_token"""
+    
+    #http://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html
+    request_parameters = {'grant_type': 'refresh_token',
+                          'client_id': config.COGNITO_CLIENT_ID,
+                          'refresh_token': session['refresh_token']}
+    response = requests.post("https://%s/oauth2/token" % config.COGNITO_DOMAIN,
+                             data=request_parameters,
+                             auth=HTTPBasicAuth(config.COGNITO_CLIENT_ID,
+                                                config.COGNITO_CLIENT_SECRET))
+
+    # the response:
+    # http://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-with-identity-providers.html
+    if response.status_code == requests.codes.ok:
+        verify(response.json()["access_token"])
+        id_token = verify(response.json()["id_token"], response.json()["access_token"])
+
+        # BBRUCE Debugging
+        #print("refresh_token_and_get_user(): response.json:")
+        #pprint.pprint(response.json())
+        
+        user = User()
+        user.id = id_token["cognito:username"]
+        
+        if id_token['nickname'] != session['nickname']:
+            print("refresh_token_and_get_user(): Error! Refreshed nickname ("+id_token['nickname']+") does not match original ("+session['nickname']+")")
+            return None
+            
+        #print("refresh_token_and_get_user(): session nickname: "+session['nickname'])
+        #print("refresh_token_and_get_user(): id_token nickname: "+id_token["nickname"])
+
+        session['nickname'] = id_token["nickname"]
+        session['expires'] = id_token["exp"]
+        # BBRUCE - The refresh token request does not return another refresh token.  Just keep using the original one.  It works OK.
+        #session['refresh_token'] = response.json()["refresh_token"]
+        
+        # Set nickname on the new user object after refresh.
+        user.nickname = session['nickname']
+
+        flask_login.login_user(user, remember=True)
+        return user
+
+    return None
 
 if __name__ == "__main__":
     # http://flask.pocoo.org/docs/0.12/errorhandling/#working-with-debuggers
