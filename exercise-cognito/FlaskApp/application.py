@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 import requests
 from requests.auth import HTTPBasicAuth
 import boto3
-from flask import Flask, render_template_string, session, redirect, request, url_for
+from flask import Flask, render_template_string, session, redirect, request, url_for, send_file
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired
 from wtforms import TextAreaField
@@ -26,6 +26,7 @@ import config
 import util
 import database
 import pprint
+import io
 
 application = Flask(__name__)
 application.secret_key = config.FLASK_SECRET
@@ -303,6 +304,22 @@ def callback():
         {% block content %}
             <p>Something went wrong</p>
         {% endblock %}""")
+     
+# BRBRUCE - Polly exercise   
+@application.route("/members_voice")
+@flask_login.login_required
+def members_voice():
+    """A polly synthesized voice"""
+    polly = boto3.client("polly", region_name=config.AWS_REGION)
+    message = "hello %s welcome back" % flask_login.current_user.nickname
+    response = polly.synthesize_speech(VoiceId='Nicole', Text=message, OutputFormat='mp3')
+
+    polly_bytes = response['AudioStream'].read()
+    return send_file(
+        io.BytesIO(polly_bytes),
+        mimetype='audio/mpeg',
+        cache_timeout=-1
+    )
 
 @application.errorhandler(401)
 def unauthorized(exception):
