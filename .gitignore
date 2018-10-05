@@ -1,2 +1,5 @@
 # Ignore cloud9 working files.
 .c9/*
+libraries/*
+!libraries/README.txt
+lambda.zip
