@@ -1,4 +1,6 @@
-This is the cloud 9 code I worked on for EdX Building on AWS course
+This is the cloud 9 code I worked on for EdX Building on AWS course.
+
+For the course notes, see https://github.com/brbruce/EdXAWSTrainingNotes/blob/master/README.md
 
 --------------------------------------------------------------------
 
